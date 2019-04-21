@@ -5,7 +5,7 @@ using UnityEngine;
 public class Evade : SteeringBehaviour
 {
     string faction;
-    public Pursue(string faction)
+    public Evade(string faction)
     {
         this.faction = faction;
     }

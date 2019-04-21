@@ -28,6 +28,10 @@ public class World {
     {
 
     }
+    public void spawnChild(uint motherID, Vector2 location, GeneticCode code)
+    {
+
+    }
     public void killZombie(uint id)
     {
 

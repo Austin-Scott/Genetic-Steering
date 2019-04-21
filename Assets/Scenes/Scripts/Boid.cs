@@ -103,7 +103,7 @@ public abstract class Boid {
         return 0.0f;
     }
 
-    public abstract void update(List<Boid> neighbors, List<Boid> touching);
+    public abstract void update(float deltaTime, List<Boid> neighbors, List<Boid> touching);
     public abstract string getFaction();
 
     public abstract GeneticCode getGeneticCode();
