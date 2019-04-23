@@ -128,14 +128,15 @@ public abstract class Boid {
         return 0.0f;
     }
 
-    public abstract void update(float deltaTime, List<Boid> neighbors, List<Boid> touching);
+    public abstract bool update(float deltaTime, List<Boid> neighbors, List<Boid> touching);
     public abstract string getFaction();
 
     public abstract GeneticCode getGeneticCode();
 
     public virtual void burnFuel(float distanceTraveled, float deltaTime)
     {
-        fuel -= 0.1f * distanceTraveled + 1.0f * deltaTime + 0.5f * detectionRadius * deltaTime + 0.25f * maxForce * deltaTime;
+        //fuel -= 0.1f * distanceTraveled + 1.0f * deltaTime + 0.5f * detectionRadius * deltaTime + 0.25f * maxForce * deltaTime;
+        fuel -= 1f * deltaTime;
     }
 
     public void move(float deltaTime, List<Boid> neighbors)

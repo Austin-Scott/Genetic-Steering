@@ -21,9 +21,9 @@ public class GeneticCode {
     public GeneticCode(GeneticCode a, GeneticCode b, float mutationRate)
     {
         data = new List<float>();
-        if(getLength()==a.getLength() && a.getLength()==b.getLength())
+        if(a.getLength()==b.getLength())
         {
-            for(int i=0;i<getLength();i++)
+            for(int i=0;i<a.getLength();i++)
             {
                 if(Random.value<mutationRate)
                 {
@@ -38,18 +38,15 @@ public class GeneticCode {
     public GeneticCode(GeneticCode a, float mutationRate)
     {
         data = new List<float>();
-        if (getLength() == a.getLength())
+        for (int i = 0; i < a.getLength(); i++)
         {
-            for (int i = 0; i < getLength(); i++)
+            if (Random.value < mutationRate)
             {
-                if (Random.value < mutationRate)
-                {
-                    data.Add(Random.value);
-                }
-                else
-                {
-                    data.Add(a.getValue(i));
-                }
+                data.Add(Random.value);
+            }
+            else
+            {
+                data.Add(a.getValue(i));
             }
         }
     }

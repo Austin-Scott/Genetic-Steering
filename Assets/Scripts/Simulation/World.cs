@@ -13,6 +13,13 @@ public class World : MonoBehaviour {
     public float worldWidth = 40;
     public float worldHeight = 40;
 
+    public int startingHumans = 20;
+    public int startingZombies = 1;
+    public int startingFood = 10;
+
+    public float timeBetweenFoodDrops = 1f;
+    private float timeUntilNextFoodDrop = 0f;
+
     private int radiusVertexCount = 10;
 
     List<Boid> boids;
@@ -44,6 +51,7 @@ public class World : MonoBehaviour {
         float fuel = mother.getFuel();
         mother.setFuel(fuel / 2f);
         Boid child = new Human(code);
+        child.setPosition(location);
         child.setFuel(fuel / 2f);
         addBoid(child);
     }
@@ -55,6 +63,29 @@ public class World : MonoBehaviour {
     {
         removeBoid(id);
     }
+    public void updateHumanState(uint id)
+    {
+        Boid boid = getBoid(id);
+        if(boid==null)
+        {
+            return;
+        }
+        string f = boid.getFaction();
+        SpriteRenderer sr = boid.getObj().GetComponent<SpriteRenderer>();
+        if(f=="Child")
+        {
+            sr.color = new Color(1, 1, 0);
+        } else if(f=="Male")
+        {
+            sr.color = new Color(1, 0, 0);
+        } else if(f=="Female")
+        {
+            sr.color = new Color(0.95f, 0.05f, 0.56f);
+        } else if(f=="PregnantFemale")
+        {
+            sr.color = new Color(0.5f, 0, 0.5f);
+        }
+    }
     public void infectHuman(uint humanID, uint zombieID)
     {
         Boid human = getBoid(humanID);
@@ -63,6 +94,7 @@ public class World : MonoBehaviour {
         float zombieFuel = zombie.getFuel();
         float fuel = (humanFuel + zombieFuel) / 2f;
         Boid newZombie = new Zombie(new GeneticCode(zombie.getGeneticCode(), 0.05f));
+        newZombie.setPosition(zombie.getPosition());
         newZombie.setFuel(fuel);
         zombie.setFuel(fuel);
         killHuman(humanID);
@@ -94,6 +126,12 @@ public class World : MonoBehaviour {
         }
 
         boids.Add(toAdd);
+    }
+    private void spawnFood()
+    {
+        Food food = new Food();
+        food.setPosition(getRandomPosition());
+        addBoid(food);
     }
     private void drawDetectionRadius(Boid boid)
     {
@@ -134,6 +172,7 @@ public class World : MonoBehaviour {
             if(boids[i].getID()==ID)
             {
                 Boid boidToRemove = boids[i];
+                Destroy(boidToRemove.getObj());
                 boids.RemoveAt(i);
                 return boidToRemove;
             }
@@ -148,11 +187,23 @@ public class World : MonoBehaviour {
         Debug.Log(getUpperBounds());
         main.orthographicSize = getUpperBounds();
 
-        for(int i=0;i<10;i++)
+        for(int i=0;i<startingZombies;i++)
         {
             Zombie zom = new Zombie(new GeneticCode(17 * 3));
-            zom.setPosition(new Vector2(0, 0));
+            zom.setPosition(getRandomPosition());
             addBoid(zom);
+        }
+
+        for(int i=0;i<startingFood;i++)
+        {
+            spawnFood();
+        }
+
+        for(int i=0;i<startingHumans;i++)
+        {
+            Human human = new Human(new GeneticCode(17 * 3 * 4));
+            human.setPosition(getRandomPosition());
+            addBoid(human);
         }
     }
     public void Update()
@@ -172,22 +223,37 @@ public class World : MonoBehaviour {
             }
             for (int j = 0; j < neighbors.Count; j++)
             {
-                if (Vector2.Distance(boids[i].getPosition(), neighbors[j].getPosition()) < 0.1)
+                if (Vector2.Distance(boids[i].getPosition(), neighbors[j].getPosition()) < 0.2)
                 {
                     touching.Add(neighbors[j]);
                 }
             }
 
-
-            boids[i].update(deltaTime, neighbors, touching);
             boids[i].move(deltaTime, neighbors);
 
-            Vector2 pos = boids[i].getPosition();
-            pos = constrainPosition(pos);
-            boids[i].setPosition(pos);
+            if(boids[i].update(deltaTime, neighbors, touching)) {
+                Vector2 pos = boids[i].getPosition();
+                pos = constrainPosition(pos);
+                boids[i].setPosition(pos);
 
-            drawDetectionRadius(boids[i]);
+                drawDetectionRadius(boids[i]);
+            }
         }
+
+        timeUntilNextFoodDrop -= deltaTime;
+        if(timeUntilNextFoodDrop<0)
+        {
+            timeUntilNextFoodDrop = timeBetweenFoodDrops;
+            spawnFood();
+        }
+    }
+    private Vector2 getRandomPosition()
+    {
+        float randX = (Random.value - 0.5f) * 2f;
+        float randY = (Random.value - 0.5f) * 2f;
+        float x = randX * getRightMostBounds();
+        float y = randY * getUpperBounds();
+        return new Vector2(x, y);
     }
     private Vector2 constrainPosition(Vector2 pos)
     {

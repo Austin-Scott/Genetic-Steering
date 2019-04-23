@@ -14,6 +14,7 @@ public class Zombie : Boid
     public Zombie(GeneticCode code)
     {
         this.code = code;
+        setFuel(100);
         addBehaviours();
         updateWeights();
     }
@@ -64,7 +65,7 @@ public class Zombie : Boid
         return "Zombie";
     }
 
-    public override void update(float deltaTime, List<Boid> neighbors, List<Boid> touching)
+    public override bool update(float deltaTime, List<Boid> neighbors, List<Boid> touching)
     {
         ZombieState initialState = state;
 
@@ -81,6 +82,12 @@ public class Zombie : Boid
         if(seesHuman==false)
         {
             state = ZombieState.Idle;
+        }
+
+        if(getFuel()<0)
+        {
+            World.world.killZombie(getID());
+            return false;
         }
         
         for(int i=0;i<touching.Count;i++)
@@ -101,6 +108,7 @@ public class Zombie : Boid
         {
             updateWeights();
         }
+        return true;
     }
 
     public override GeneticCode getGeneticCode()

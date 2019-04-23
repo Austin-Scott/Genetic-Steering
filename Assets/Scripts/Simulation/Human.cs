@@ -15,12 +15,19 @@ public class Human : Boid
     private GeneticCode childCode;
     private HumanState state;
 
+    private bool firstUpdate;
+
     public Human(GeneticCode code)
     {
         this.code = code;
+        type = HumanType.Child;
+        firstUpdate = true;
+        secondsUntilMaturity = 10f + (Random.value * 5f);
         state = HumanState.Idle;
+        setFuel(100);
         addBehaviours();
         updateWeights();
+        World.world.updateHumanState(getID());
     }
     private void addBehaviours()
     {
@@ -72,7 +79,7 @@ public class Human : Boid
         return type.ToString();
     }
 
-    public override void update(float deltaTime, List<Boid> neighbors, List<Boid> touching)
+    public override bool update(float deltaTime, List<Boid> neighbors, List<Boid> touching)
     {
         HumanType initialType = type;
         HumanState initialState = state;
@@ -104,6 +111,12 @@ public class Human : Boid
             }
         }
 
+        if(getFuel()<0)
+        {
+            World.world.killHuman(getID());
+            return false;
+        }
+
         if(type==HumanType.PregnantFemale)
         {
             secondsUntilBirth -= deltaTime;
@@ -131,10 +144,13 @@ public class Human : Boid
 
         secondsAlive += deltaTime;
 
-        if(initialState!=state || initialType!=type)
+        if(firstUpdate || initialState!=state || initialType!=type)
         {
+            firstUpdate = false;
             updateWeights();
+            World.world.updateHumanState(getID());
         }
+        return true;
     }
 
     public override GeneticCode getGeneticCode()
