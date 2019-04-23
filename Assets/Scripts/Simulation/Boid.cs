@@ -3,6 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class Boid {
+
+    private GameObject obj=null;
+    public void setObj(GameObject obj)
+    {
+        this.obj = obj;
+    }
+    public GameObject getObj()
+    {
+        return obj;
+    }
+
     private static uint maxID=0;
     private static uint getNewID()
     {
@@ -56,6 +67,8 @@ public abstract class Boid {
     public Boid()
     {
         id = getNewID();
+        weights = new List<SteeringWeight>();
+        behaviours = new List<SteeringBehaviour>();
     }
 
     public Vector2 getPosition()
@@ -76,15 +89,15 @@ public abstract class Boid {
     }
     public void setMaxVelocity(float velocity)
     {
-        maxVelocity = velocity;
+        maxVelocity = 10*velocity;
     }
     public void setMaxForce(float force)
     {
-        maxForce = force;
+        maxForce = 10*force;
     }
     public float getDetectionRadius()
     {
-        return detectionRadius;
+        return 10*detectionRadius;
     }
 
     public void addSteeringBehaviour(SteeringBehaviour behaviour, float weight)
@@ -146,6 +159,8 @@ public abstract class Boid {
         }
         Vector2 oldPosition = new Vector2(position.x, position.y);
         position += velocity * deltaTime;
+
+        obj.transform.SetPositionAndRotation(position, Quaternion.identity);
 
         burnFuel(Vector2.Distance(oldPosition, position), deltaTime);
     }
