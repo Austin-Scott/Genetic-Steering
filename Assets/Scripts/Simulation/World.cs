@@ -181,10 +181,32 @@ public class World : MonoBehaviour {
 
             boids[i].update(deltaTime, neighbors, touching);
             boids[i].move(deltaTime, neighbors);
+
+            Vector2 pos = boids[i].getPosition();
+            pos = constrainPosition(pos);
+            boids[i].setPosition(pos);
+
             drawDetectionRadius(boids[i]);
         }
     }
-
+    private Vector2 constrainPosition(Vector2 pos)
+    {
+        if(pos.y>getUpperBounds())
+        {
+            pos.y = getLowerBounds();
+        } else if(pos.y<getLowerBounds())
+        {
+            pos.y = getUpperBounds();
+        }
+        if(pos.x>getRightMostBounds())
+        {
+            pos.x = getLeftMostBounds();
+        } else if(pos.x<getLeftMostBounds())
+        {
+            pos.x = getRightMostBounds();
+        }
+        return pos;
+    }
     private float getUpperBounds()
     {
         return worldHeight / 2f;
