@@ -19,8 +19,18 @@ public class Food : Boid
         return true;
     }
 
+    public override void burnFuel(float distanceTraveled, float deltaTime)
+    {
+        //DO NOTHING
+    }
+
     public override GeneticCode getGeneticCode()
     {
         return new GeneticCode(0);
+    }
+
+    public override float getScore(float simulationTime)
+    {
+        return 0;
     }
 }

@@ -160,4 +160,9 @@ public class Human : Boid
     {
         return code;
     }
+
+    public override float getScore(float simulationTime)
+    {
+        return 2 * (simulationTime + (2 * secondsAlive)) + getFuel();
+    }
 }

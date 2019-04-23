@@ -2,6 +2,39 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public class GenePool : System.IComparable<GenePool>
+{
+    GeneticCode code;
+    float score;
+    public GenePool(GeneticCode code, float score)
+    {
+        this.code = code;
+        this.score = score;
+    }
+
+    public int CompareTo(GenePool other)
+    {
+        if(score>other.getScore())
+        {
+            return 1;
+        } else if(score<other.getScore())
+        {
+            return -1;
+        }
+
+        return 0;
+    }
+
+    public GeneticCode getCode()
+    {
+        return code;
+    }
+    public float getScore()
+    {
+        return score;
+    }
+}
+
 public class World : MonoBehaviour {
 
     public static World world=null;
@@ -20,13 +53,25 @@ public class World : MonoBehaviour {
     public float timeBetweenFoodDrops = 1f;
     private float timeUntilNextFoodDrop = 0f;
 
+    private float generationTime = 0;
+
     private int radiusVertexCount = 10;
 
+    private int humansAlive;
+    private int zombiesAlive;
+
+    private List<GenePool> deadHumans;
+    private List<GenePool> deadZombies;
+
     List<Boid> boids;
+
+    private int boidCount = 0;
 
     public World()
     {
         boids = new List<Boid>();
+        deadHumans = new List<GenePool>();
+        deadZombies = new List<GenePool>();
     }
 
     public List<Boid> getBoidsInCircle(Vector2 center, float radius)
@@ -54,14 +99,97 @@ public class World : MonoBehaviour {
         child.setPosition(location);
         child.setFuel(fuel / 2f);
         addBoid(child);
+
+        humansAlive++;
     }
     public void killZombie(uint id)
     {
+        Boid boid = getBoid(id);
+        deadZombies.Add(new GenePool(boid.getGeneticCode(), boid.getScore(generationTime)));
         removeBoid(id);
+
+        zombiesAlive--;
     }
     public void killHuman(uint id)
     {
+        Boid boid = getBoid(id);
+        deadHumans.Add(new GenePool(boid.getGeneticCode(), boid.getScore(generationTime)));
         removeBoid(id);
+
+        humansAlive--;
+    }
+    private List<GenePool> getTopGenes(List<GenePool> from, int n)
+    {
+        if(from.Count==0)
+        {
+            return null;
+        }
+        from.Sort();
+        List<GenePool> result = new List<GenePool>();
+        int i = 0;
+        while(n>0)
+        {
+            result.Add(from[i]);
+            if(i+1<from.Count)
+            {
+                i++;
+            }
+            n--;
+        }
+        return result;
+    }
+    private void nextGeneration()
+    {
+        for(int i=0;i<boids.Count;i++)
+        {
+            string f = boids[i].getFaction();
+            if (f=="Child" || f=="Male" || f=="Female" || f=="PregnantFemale")
+            {
+                killHuman(boids[i].getID());
+            } else if(f=="Zombie")
+            {
+                killZombie(boids[i].getID());
+            } else
+            {
+                removeFood(boids[i].getID());
+            }
+        }
+        boids.Clear();
+        Boid.resetIDs();
+
+        Debug.Log("Boids cleared. Boid Count: " + boidCount);
+
+        List<GenePool> topHumans = getTopGenes(deadHumans, startingHumans);
+        List<GenePool> topZombies = getTopGenes(deadZombies, startingZombies);
+
+        deadHumans.Clear();
+        deadZombies.Clear();
+
+        for (int i = 0; i < startingZombies; i++)
+        {
+            Zombie zom = new Zombie(topZombies[i].getCode());
+            zom.setPosition(getRandomPosition());
+            addBoid(zom);
+        }
+
+        for (int i = 0; i < startingFood; i++)
+        {
+            spawnFood();
+        }
+
+        for (int i = 0; i < startingHumans; i++)
+        {
+            Human human = new Human(topHumans[i].getCode());
+            human.setPosition(getRandomPosition());
+            addBoid(human);
+        }
+
+        topHumans.Clear();
+        topZombies.Clear();
+
+        humansAlive = startingHumans;
+        zombiesAlive = startingZombies;
+        generationTime = 0;
     }
     public void updateHumanState(uint id)
     {
@@ -99,6 +227,8 @@ public class World : MonoBehaviour {
         zombie.setFuel(fuel);
         killHuman(humanID);
         addBoid(newZombie);
+
+        zombiesAlive++;
     }
     private void addBoid(Boid toAdd)
     {
@@ -126,6 +256,8 @@ public class World : MonoBehaviour {
         }
 
         boids.Add(toAdd);
+
+        boidCount++;
     }
     private void spawnFood()
     {
@@ -165,7 +297,7 @@ public class World : MonoBehaviour {
         }
         return null;
     }
-    private Boid removeBoid(uint ID)
+    private void removeBoid(uint ID)
     {
         for(int i=0;i<boids.Count;i++)
         {
@@ -174,10 +306,11 @@ public class World : MonoBehaviour {
                 Boid boidToRemove = boids[i];
                 Destroy(boidToRemove.getObj());
                 boids.RemoveAt(i);
-                return boidToRemove;
+
+                boidCount--;
+                return;
             }
         }
-        return null;
     }
 
     public void Start()
@@ -205,6 +338,9 @@ public class World : MonoBehaviour {
             human.setPosition(getRandomPosition());
             addBoid(human);
         }
+
+        humansAlive = startingHumans;
+        zombiesAlive = startingZombies;
     }
     public void Update()
     {
@@ -223,7 +359,7 @@ public class World : MonoBehaviour {
             }
             for (int j = 0; j < neighbors.Count; j++)
             {
-                if (Vector2.Distance(boids[i].getPosition(), neighbors[j].getPosition()) < 0.2)
+                if (Vector2.Distance(boids[i].getPosition(), neighbors[j].getPosition()) < 0.5)
                 {
                     touching.Add(neighbors[j]);
                 }
@@ -240,11 +376,21 @@ public class World : MonoBehaviour {
             }
         }
 
+        generationTime += deltaTime;
+
         timeUntilNextFoodDrop -= deltaTime;
         if(timeUntilNextFoodDrop<0)
         {
             timeUntilNextFoodDrop = timeBetweenFoodDrops;
             spawnFood();
+        }
+
+        if(humansAlive==0 || zombiesAlive==0)
+        {
+            Debug.Log("Round over. Humans: " + humansAlive + " Zombies: " + zombiesAlive);
+            humansAlive = -1;
+            zombiesAlive = -1;
+            Invoke("nextGeneration", 5);
         }
     }
     private Vector2 getRandomPosition()

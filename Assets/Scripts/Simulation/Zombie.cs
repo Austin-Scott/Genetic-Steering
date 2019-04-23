@@ -118,4 +118,9 @@ public class Zombie : Boid
     {
         return code;
     }
+
+    public override float getScore(float simulationTime)
+    {
+        return (10*kills)+getFuel();
+    }
 }

@@ -130,6 +130,7 @@ public abstract class Boid {
 
     public abstract bool update(float deltaTime, List<Boid> neighbors, List<Boid> touching);
     public abstract string getFaction();
+    public abstract float getScore(float simulationTime);
 
     public abstract GeneticCode getGeneticCode();
 
