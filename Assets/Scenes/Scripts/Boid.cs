@@ -41,7 +41,7 @@ public abstract class Boid {
     {
         return fuel;
     }
-    protected void setFuel(float value)
+    public void setFuel(float value)
     {
         fuel = value;
     }
@@ -69,6 +69,18 @@ public abstract class Boid {
     public Vector2 getVelocity()
     {
         return velocity;
+    }
+    public void setDetectionRadius(float radius)
+    {
+        detectionRadius = radius;
+    }
+    public void setMaxVelocity(float velocity)
+    {
+        maxVelocity = velocity;
+    }
+    public void setMaxForce(float force)
+    {
+        maxForce = force;
     }
     public float getDetectionRadius()
     {

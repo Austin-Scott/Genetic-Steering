@@ -48,6 +48,10 @@ public class Human : Boid
         //Genetic code layout
         //  Each type consists of 3 blocks of 17 floats long (Idle, Hunted, Hungry)
         //[Child], [Male], [Female], [Pregnant Female]
+        setDetectionRadius(code.getValue((17 * 3 * (int)type) + (17 * (int)state)));
+        setMaxForce(code.getValue((17 * 3 * (int)type) + (17 * (int)state) + 1));
+        setMaxVelocity(code.getValue((17 * 3 * (int)type + (17 * (int)state) + 2)));
+
         updateWeight("Wander", 0);
         updateWeight("Stop", 1);
         updateWeight("PursueFood", 2);

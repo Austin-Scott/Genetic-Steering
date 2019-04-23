@@ -40,6 +40,10 @@ public class Zombie : Boid
     }
     private void updateWeights()
     {
+        setDetectionRadius(code.getValue((17 * (int)state)));
+        setMaxForce(code.getValue((17 * (int)state + 1)));
+        setMaxVelocity(code.getValue((17 * (int)state + 2)));
+
         updateWeight("Wander", 0);
         updateWeight("Stop", 1);
         updateWeight("PursueFood", 2);
@@ -64,7 +68,34 @@ public class Zombie : Boid
     {
         ZombieState initialState = state;
 
-        //TODO needs implemented
+        bool seesHuman = false;
+        for(int i=0;i<neighbors.Count;i++)
+        {
+            string f = neighbors[i].getFaction();
+            if(f=="Child" || f=="Male" || f=="Female" || f=="PregnantFemale")
+            {
+                seesHuman = true;
+                state = ZombieState.Hunting;
+            }
+        }
+        if(seesHuman==false)
+        {
+            state = ZombieState.Idle;
+        }
+        
+        for(int i=0;i<touching.Count;i++)
+        {
+            string f = neighbors[i].getFaction();
+            if (f == "Child" || f == "Male" || f == "Female" || f == "PregnantFemale")
+            {
+                kills++;
+                World.world.infectHuman(neighbors[i].getID(), getID());
+            } else if(f=="Food")
+            {
+                addFuel(-neighbors[i].getFuel());
+                World.world.removeFood(neighbors[i].getID());
+            }
+        }
 
         if(state!=initialState)
         {
