@@ -88,6 +88,9 @@ public class Zombie : Boid
         {
             World.world.killZombie(getID());
             return false;
+        } else if(getFuel()<20)
+        {
+            state = ZombieState.Hungry;
         }
         
         for(int i=0;i<touching.Count;i++)

@@ -115,6 +115,9 @@ public class Human : Boid
         {
             World.world.killHuman(getID());
             return false;
+        } else if(getFuel()<20)
+        {
+            state = HumanState.Hungry;
         }
 
         if(type==HumanType.PregnantFemale)
