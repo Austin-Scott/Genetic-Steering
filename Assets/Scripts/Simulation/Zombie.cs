@@ -14,7 +14,7 @@ public class Zombie : Boid
     public Zombie(GeneticCode code)
     {
         this.code = code;
-        setFuel(100);
+        setFuel(200);
         addBehaviours();
         updateWeights();
     }
@@ -88,7 +88,7 @@ public class Zombie : Boid
         {
             World.world.killZombie(getID());
             return false;
-        } else if(getFuel()<20)
+        } else if(getFuel()<50)
         {
             state = ZombieState.Hungry;
         }
@@ -100,6 +100,7 @@ public class Zombie : Boid
             {
                 kills++;
                 World.world.infectHuman(neighbors[i].getID(), getID());
+                return true;
             } else if(f=="Food")
             {
                 addFuel(-neighbors[i].getFuel());
@@ -112,6 +113,11 @@ public class Zombie : Boid
             updateWeights();
         }
         return true;
+    }
+
+    public override void burnFuel(float distanceTraveled, float deltaTime)
+    {
+        setFuel(getFuel() - (0.5f * distanceTraveled) + (0.5f * getDetectionRadius() * deltaTime));
     }
 
     public override GeneticCode getGeneticCode()

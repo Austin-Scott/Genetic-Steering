@@ -54,11 +54,15 @@ public class World : MonoBehaviour {
     private float timeUntilNextFoodDrop = 0f;
 
     private float generationTime = 0;
+    private int generationNum = 0;
 
     private int radiusVertexCount = 10;
 
     private int humansAlive;
     private int zombiesAlive;
+
+    private int humanVictories = 0;
+    private int zombieVictories = 0;
 
     private List<GenePool> deadHumans;
     private List<GenePool> deadZombies;
@@ -94,10 +98,10 @@ public class World : MonoBehaviour {
     {
         Boid mother = getBoid(motherID);
         float fuel = mother.getFuel();
-        mother.setFuel(fuel / 2f);
+        mother.setFuel(fuel * 0.75f);
         Boid child = new Human(code);
         child.setPosition(location);
-        child.setFuel(fuel / 2f);
+        child.setFuel(fuel * 0.5f);
         addBoid(child);
 
         humansAlive++;
@@ -118,6 +122,11 @@ public class World : MonoBehaviour {
 
         humansAlive--;
     }
+    private int getTopID(int count)
+    {
+        float forth = count / 4f;
+        return Mathf.FloorToInt(Random.value * forth);
+    }
     private List<GenePool> getTopGenes(List<GenePool> from, int n)
     {
         if(from.Count==0)
@@ -126,14 +135,9 @@ public class World : MonoBehaviour {
         }
         from.Sort();
         List<GenePool> result = new List<GenePool>();
-        int i = 0;
         while(n>0)
         {
-            result.Add(from[i]);
-            if(i+1<from.Count)
-            {
-                i++;
-            }
+            result.Add(from[getTopID(from.Count)]);
             n--;
         }
         return result;
@@ -153,11 +157,10 @@ public class World : MonoBehaviour {
             {
                 removeFood(boids[i].getID());
             }
+            i--;
         }
         boids.Clear();
         Boid.resetIDs();
-
-        Debug.Log("Boids cleared. Boid Count: " + boidCount);
 
         List<GenePool> topHumans = getTopGenes(deadHumans, startingHumans);
         List<GenePool> topZombies = getTopGenes(deadZombies, startingZombies);
@@ -167,7 +170,7 @@ public class World : MonoBehaviour {
 
         for (int i = 0; i < startingZombies; i++)
         {
-            Zombie zom = new Zombie(topZombies[i].getCode());
+            Zombie zom = new Zombie(new GeneticCode(topZombies[i].getCode(), 0.05f));
             zom.setPosition(getRandomPosition());
             addBoid(zom);
         }
@@ -179,7 +182,7 @@ public class World : MonoBehaviour {
 
         for (int i = 0; i < startingHumans; i++)
         {
-            Human human = new Human(topHumans[i].getCode());
+            Human human = new Human(new GeneticCode(topHumans[i].getCode(), 0.05f));
             human.setPosition(getRandomPosition());
             addBoid(human);
         }
@@ -190,6 +193,7 @@ public class World : MonoBehaviour {
         humansAlive = startingHumans;
         zombiesAlive = startingZombies;
         generationTime = 0;
+        generationNum++;
     }
     public void updateHumanState(uint id)
     {
@@ -220,7 +224,7 @@ public class World : MonoBehaviour {
         Boid zombie = getBoid(zombieID);
         float humanFuel = human.getFuel();
         float zombieFuel = zombie.getFuel();
-        float fuel = (humanFuel + zombieFuel) / 2f;
+        float fuel = humanFuel;
         Boid newZombie = new Zombie(new GeneticCode(zombie.getGeneticCode(), 0.05f));
         newZombie.setPosition(zombie.getPosition());
         newZombie.setFuel(fuel);
@@ -303,8 +307,7 @@ public class World : MonoBehaviour {
         {
             if(boids[i].getID()==ID)
             {
-                Boid boidToRemove = boids[i];
-                Destroy(boidToRemove.getObj());
+                Destroy(boids[i].getObj());
                 boids.RemoveAt(i);
 
                 boidCount--;
@@ -317,7 +320,6 @@ public class World : MonoBehaviour {
     {
         world = this;
         Camera main = Camera.main;
-        Debug.Log(getUpperBounds());
         main.orthographicSize = getUpperBounds();
 
         for(int i=0;i<startingZombies;i++)
@@ -344,7 +346,7 @@ public class World : MonoBehaviour {
     }
     public void Update()
     {
-        float deltaTime = Time.deltaTime;
+        float deltaTime = 3*Time.deltaTime;
         for (int i = 0; i < boids.Count; i++)
         {
             List<Boid> neighbors = new List<Boid>();
@@ -387,7 +389,14 @@ public class World : MonoBehaviour {
 
         if(humansAlive==0 || zombiesAlive==0)
         {
-            Debug.Log("Round over. Humans: " + humansAlive + " Zombies: " + zombiesAlive);
+            if(zombiesAlive==0)
+            {
+                humanVictories++;
+            } else
+            {
+                zombieVictories++;
+            }
+            Debug.Log("Round "+generationNum+" over. Humans: " + humanVictories + " Zombies: " + zombieVictories);
             humansAlive = -1;
             zombiesAlive = -1;
             Invoke("nextGeneration", 5);

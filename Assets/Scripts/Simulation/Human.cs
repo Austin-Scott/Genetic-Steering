@@ -22,9 +22,9 @@ public class Human : Boid
         this.code = code;
         type = HumanType.Child;
         firstUpdate = true;
-        secondsUntilMaturity = 10f + (Random.value * 5f);
+        secondsUntilMaturity = 5f + (Random.value * 10f);
         state = HumanState.Idle;
-        setFuel(100);
+        setFuel(200);
         addBehaviours();
         updateWeights();
         World.world.updateHumanState(getID());
@@ -107,7 +107,7 @@ public class Human : Boid
                 //Become pregnant
                 type = HumanType.PregnantFemale;
                 childCode = new GeneticCode(touching[i].getGeneticCode(), code, 0.05f);
-                secondsUntilBirth = 15f;
+                secondsUntilBirth = 7f;
             }
         }
 
@@ -115,7 +115,7 @@ public class Human : Boid
         {
             World.world.killHuman(getID());
             return false;
-        } else if(getFuel()<20)
+        } else if(getFuel()<50)
         {
             state = HumanState.Hungry;
         }

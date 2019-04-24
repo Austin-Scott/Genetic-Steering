@@ -6,7 +6,7 @@ public class Food : Boid
 {
 
     public Food() {
-        setFuel(10);
+        setFuel(50);
     }
     
     public override string getFaction()

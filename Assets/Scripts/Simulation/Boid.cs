@@ -89,11 +89,11 @@ public abstract class Boid {
     }
     public void setMaxVelocity(float velocity)
     {
-        maxVelocity = 10*velocity;
+        maxVelocity = 20*velocity;
     }
     public void setMaxForce(float force)
     {
-        maxForce = 10*force;
+        maxForce = 20*force;
     }
     public float getDetectionRadius()
     {
@@ -136,8 +136,8 @@ public abstract class Boid {
 
     public virtual void burnFuel(float distanceTraveled, float deltaTime)
     {
-        //fuel -= 0.1f * distanceTraveled + 1.0f * deltaTime + 0.5f * detectionRadius * deltaTime + 0.25f * maxForce * deltaTime;
-        fuel -= 1f * deltaTime;
+        fuel -= (0.1f * distanceTraveled) + (0.5f * detectionRadius * deltaTime) + (0.25f * maxForce * deltaTime) + (1.0f * deltaTime);
+        //fuel -= 1f * deltaTime;
     }
 
     public void move(float deltaTime, List<Boid> neighbors)
