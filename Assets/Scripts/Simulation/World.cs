@@ -68,6 +68,8 @@ public class World : MonoBehaviour {
 
     private bool roundIsOver = false;
 
+    private bool showDetectionRadii=true;
+
     private List<GenePool> deadHumans;
     private List<GenePool> deadZombies;
 
@@ -78,6 +80,8 @@ public class World : MonoBehaviour {
 
     private int boidCount = 0;
 
+    private float simulationSpeed = 1f;
+
     public World()
     {
         boids = new List<Boid>();
@@ -86,6 +90,10 @@ public class World : MonoBehaviour {
         boidsToRemove = new List<uint>();
         boidsToAdd = new List<Boid>();
         roundIsOver = false;
+    }
+    public void setSimulationSpeed(float speed)
+    {
+        simulationSpeed = speed;
     }
     private bool isBoidGoingToBeRemoved(uint id)
     {
@@ -98,7 +106,10 @@ public class World : MonoBehaviour {
         }
         return false;
     }
-
+    public void setShowDetectionRadii(UnityEngine.UI.Toggle value)
+    {
+        showDetectionRadii = value.isOn;
+    }
     public List<Boid> getBoidsInCircle(Vector2 center, float radius)
     {
         List<Boid> result = new List<Boid>();
@@ -338,6 +349,12 @@ public class World : MonoBehaviour {
         {
             return;
         }
+        if(!showDetectionRadii)
+        {
+            lr.enabled = false;
+            return;
+        }
+        lr.enabled = true;
         float theta = 0f;
         float radius = boid.getDetectionRadius();
         float thetaStep = (2f * Mathf.PI) / (radiusVertexCount-1);
@@ -408,7 +425,7 @@ public class World : MonoBehaviour {
     }
     public void Update()
     {
-        float deltaTime = Time.deltaTime;
+        float deltaTime = simulationSpeed*Time.deltaTime;
         for (int i = 0; i < boids.Count; i++)
         {
             List<Boid> neighbors = new List<Boid>();
@@ -454,18 +471,35 @@ public class World : MonoBehaviour {
 
         if(!roundIsOver && (humansAlive==0 || zombiesAlive==0))
         {
-            if(zombiesAlive==0)
-            {
-                humanVictories++;
-            } else
-            {
-                zombieVictories++;
-            }
-            roundIsOver = true;
-            Debug.Log("Round "+(generationNum+1)+" over. Humans: " + humanVictories + " Zombies: " + zombieVictories);
-            Invoke("nextGeneration", 5);
+            endGeneration();
         }
     }
+    public int getHumanVictories()
+    {
+        return humanVictories;
+    }
+    public int getZombieVictories()
+    {
+        return zombieVictories;
+    }
+    public int getGeneration()
+    {
+        return generationNum;
+    }
+    public void endGeneration()
+    {
+        if (humansAlive > zombiesAlive)
+        {
+            humanVictories++;
+        }
+        else
+        {
+            zombieVictories++;
+        }
+        roundIsOver = true;
+        Debug.Log("Round " + (generationNum + 1) + " over. Humans: " + humanVictories + " Zombies: " + zombieVictories);
+        Invoke("nextGeneration", 2.5f);
+    } 
     private Vector2 getRandomPosition()
     {
         float randX = (Random.value - 0.5f) * 2f;
