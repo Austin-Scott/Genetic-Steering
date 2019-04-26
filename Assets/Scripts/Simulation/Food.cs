@@ -14,9 +14,9 @@ public class Food : Boid
         return "Food";
     }
 
-    public override bool update(float deltaTime, List<Boid> neighbors, List<Boid> touching)
+    public override void update(float deltaTime, List<Boid> neighbors, List<Boid> touching)
     {
-        return true;
+        return;
     }
 
     public override void burnFuel(float distanceTraveled, float deltaTime)

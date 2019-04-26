@@ -13,6 +13,12 @@ public abstract class Boid {
     {
         return obj;
     }
+    bool gameObjectDestroyed = false;
+    public void destroyGameObject()
+    {
+        gameObjectDestroyed = true;
+        Object.Destroy(obj);
+    }
 
     private static uint maxID=0;
     private static uint getNewID()
@@ -128,7 +134,7 @@ public abstract class Boid {
         return 0.0f;
     }
 
-    public abstract bool update(float deltaTime, List<Boid> neighbors, List<Boid> touching);
+    public abstract void update(float deltaTime, List<Boid> neighbors, List<Boid> touching);
     public abstract string getFaction();
     public abstract float getScore(float simulationTime);
 
@@ -161,6 +167,11 @@ public abstract class Boid {
         }
         Vector2 oldPosition = new Vector2(position.x, position.y);
         position += velocity * deltaTime;
+
+        if(obj==null)
+        {
+            Debug.Log("ID: " + getID() + ". Faction: " + getFaction());
+        }
 
         obj.transform.SetPositionAndRotation(position, Quaternion.identity);
 

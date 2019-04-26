@@ -49,6 +49,7 @@ public class World : MonoBehaviour {
     public int startingHumans = 20;
     public int startingZombies = 1;
     public int startingFood = 10;
+    public int maxFood = 100;
 
     public float timeBetweenFoodDrops = 1f;
     private float timeUntilNextFoodDrop = 0f;
@@ -60,12 +61,18 @@ public class World : MonoBehaviour {
 
     private int humansAlive;
     private int zombiesAlive;
+    private int foodPieces;
 
     private int humanVictories = 0;
     private int zombieVictories = 0;
 
+    private bool roundIsOver = false;
+
     private List<GenePool> deadHumans;
     private List<GenePool> deadZombies;
+
+    private List<uint> boidsToRemove;
+    private List<Boid> boidsToAdd;
 
     List<Boid> boids;
 
@@ -76,6 +83,20 @@ public class World : MonoBehaviour {
         boids = new List<Boid>();
         deadHumans = new List<GenePool>();
         deadZombies = new List<GenePool>();
+        boidsToRemove = new List<uint>();
+        boidsToAdd = new List<Boid>();
+        roundIsOver = false;
+    }
+    private bool isBoidGoingToBeRemoved(uint id)
+    {
+        for(int i=0;i<boidsToRemove.Count;i++)
+        {
+            if(boidsToRemove[i]==id)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public List<Boid> getBoidsInCircle(Vector2 center, float radius)
@@ -92,7 +113,11 @@ public class World : MonoBehaviour {
     }
     public void removeFood(uint id)
     {
-        removeBoid(id);
+        if(!isBoidGoingToBeRemoved(id))
+        {
+            boidsToRemove.Add(id);
+            foodPieces--;
+        }
     }
     public void spawnChild(uint motherID, Vector2 location, GeneticCode code)
     {
@@ -102,30 +127,57 @@ public class World : MonoBehaviour {
         Boid child = new Human(code);
         child.setPosition(location);
         child.setFuel(fuel * 0.5f);
-        addBoid(child);
+        boidsToAdd.Add(child);
 
         humansAlive++;
     }
     public void killZombie(uint id)
     {
-        Boid boid = getBoid(id);
-        deadZombies.Add(new GenePool(boid.getGeneticCode(), boid.getScore(generationTime)));
-        removeBoid(id);
+        if(!isBoidGoingToBeRemoved(id))
+        {
+            Boid boid = getBoid(id);
+            deadZombies.Add(new GenePool(boid.getGeneticCode(), boid.getScore(generationTime)));
+            boidsToRemove.Add(id);
 
-        zombiesAlive--;
+            zombiesAlive--;
+        }
     }
     public void killHuman(uint id)
     {
-        Boid boid = getBoid(id);
-        deadHumans.Add(new GenePool(boid.getGeneticCode(), boid.getScore(generationTime)));
-        removeBoid(id);
+        if(!isBoidGoingToBeRemoved(id))
+        {
+            Boid boid = getBoid(id);
+            deadHumans.Add(new GenePool(boid.getGeneticCode(), boid.getScore(generationTime)));
+            boidsToRemove.Add(id);
 
-        humansAlive--;
+            humansAlive--;
+        }
+    }
+    private void createAndRemoveBoids()
+    {
+        for (int i = 0; i < boidsToAdd.Count; i++)
+        {
+            addBoid(boidsToAdd[i]);
+        }
+        boidsToAdd.Clear();
+        for (int i=0;i<boidsToRemove.Count;i++)
+        {
+            uint idToRemove = boidsToRemove[i];
+            removeBoid(boidsToRemove[i]);
+        }
+        boidsToRemove.Clear();
     }
     private int getTopID(int count)
     {
-        float forth = count / 4f;
-        return Mathf.FloorToInt(Random.value * forth);
+        int result = Mathf.FloorToInt((-1f * Mathf.Sqrt(1f - Mathf.Pow(Random.value, 2f))) + 1f);
+        if(result>=count)
+        {
+            result = count - 1;
+        } else if(result<0)
+        {
+            result = 0;
+        }
+        return result;
     }
     private List<GenePool> getTopGenes(List<GenePool> from, int n)
     {
@@ -157,8 +209,8 @@ public class World : MonoBehaviour {
             {
                 removeFood(boids[i].getID());
             }
-            i--;
         }
+        createAndRemoveBoids();
         boids.Clear();
         Boid.resetIDs();
 
@@ -192,7 +244,9 @@ public class World : MonoBehaviour {
 
         humansAlive = startingHumans;
         zombiesAlive = startingZombies;
+        foodPieces = startingFood;
         generationTime = 0;
+        roundIsOver = false;
         generationNum++;
     }
     public void updateHumanState(uint id)
@@ -220,19 +274,22 @@ public class World : MonoBehaviour {
     }
     public void infectHuman(uint humanID, uint zombieID)
     {
-        Boid human = getBoid(humanID);
-        Boid zombie = getBoid(zombieID);
-        float humanFuel = human.getFuel();
-        float zombieFuel = zombie.getFuel();
-        float fuel = humanFuel;
-        Boid newZombie = new Zombie(new GeneticCode(zombie.getGeneticCode(), 0.05f));
-        newZombie.setPosition(zombie.getPosition());
-        newZombie.setFuel(fuel);
-        zombie.setFuel(fuel);
-        killHuman(humanID);
-        addBoid(newZombie);
+        if(!isBoidGoingToBeRemoved(humanID))
+        {
+            Boid human = getBoid(humanID);
+            Boid zombie = getBoid(zombieID);
+            float humanFuel = human.getFuel();
+            float zombieFuel = zombie.getFuel();
+            float fuel = humanFuel;
+            Boid newZombie = new Zombie(new GeneticCode(zombie.getGeneticCode(), 0.05f));
+            newZombie.setPosition(zombie.getPosition());
+            newZombie.setFuel(fuel);
+            zombie.setFuel(zombie.getFuel()+fuel);
+            killHuman(humanID);
+            boidsToAdd.Add(newZombie);
 
-        zombiesAlive++;
+            zombiesAlive++;
+        }
     }
     private void addBoid(Boid toAdd)
     {
@@ -265,9 +322,13 @@ public class World : MonoBehaviour {
     }
     private void spawnFood()
     {
-        Food food = new Food();
-        food.setPosition(getRandomPosition());
-        addBoid(food);
+        if(foodPieces<maxFood)
+        {
+            Food food = new Food();
+            food.setPosition(getRandomPosition());
+            addBoid(food);
+            foodPieces++;
+        }
     }
     private void drawDetectionRadius(Boid boid)
     {
@@ -307,9 +368,9 @@ public class World : MonoBehaviour {
         {
             if(boids[i].getID()==ID)
             {
-                Destroy(boids[i].getObj());
+                int countBefore = boids.Count;
+                boids[i].destroyGameObject();
                 boids.RemoveAt(i);
-
                 boidCount--;
                 return;
             }
@@ -343,10 +404,11 @@ public class World : MonoBehaviour {
 
         humansAlive = startingHumans;
         zombiesAlive = startingZombies;
+        foodPieces = startingFood;
     }
     public void Update()
     {
-        float deltaTime = 3*Time.deltaTime;
+        float deltaTime = Time.deltaTime;
         for (int i = 0; i < boids.Count; i++)
         {
             List<Boid> neighbors = new List<Boid>();
@@ -369,14 +431,17 @@ public class World : MonoBehaviour {
 
             boids[i].move(deltaTime, neighbors);
 
-            if(boids[i].update(deltaTime, neighbors, touching)) {
-                Vector2 pos = boids[i].getPosition();
-                pos = constrainPosition(pos);
-                boids[i].setPosition(pos);
+            string faction = boids[i].getFaction();
+            boids[i].update(deltaTime, neighbors, touching);
 
-                drawDetectionRadius(boids[i]);
-            }
+            Vector2 pos = boids[i].getPosition();
+            pos = constrainPosition(pos);
+            boids[i].setPosition(pos);
+
+            drawDetectionRadius(boids[i]);
         }
+
+        createAndRemoveBoids();
 
         generationTime += deltaTime;
 
@@ -387,7 +452,7 @@ public class World : MonoBehaviour {
             spawnFood();
         }
 
-        if(humansAlive==0 || zombiesAlive==0)
+        if(!roundIsOver && (humansAlive==0 || zombiesAlive==0))
         {
             if(zombiesAlive==0)
             {
@@ -396,9 +461,8 @@ public class World : MonoBehaviour {
             {
                 zombieVictories++;
             }
-            Debug.Log("Round "+generationNum+" over. Humans: " + humanVictories + " Zombies: " + zombieVictories);
-            humansAlive = -1;
-            zombiesAlive = -1;
+            roundIsOver = true;
+            Debug.Log("Round "+(generationNum+1)+" over. Humans: " + humanVictories + " Zombies: " + zombieVictories);
             Invoke("nextGeneration", 5);
         }
     }

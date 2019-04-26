@@ -79,7 +79,7 @@ public class Human : Boid
         return type.ToString();
     }
 
-    public override bool update(float deltaTime, List<Boid> neighbors, List<Boid> touching)
+    public override void update(float deltaTime, List<Boid> neighbors, List<Boid> touching)
     {
         HumanType initialType = type;
         HumanState initialState = state;
@@ -114,7 +114,7 @@ public class Human : Boid
         if(getFuel()<0)
         {
             World.world.killHuman(getID());
-            return false;
+            return;
         } else if(getFuel()<50)
         {
             state = HumanState.Hungry;
@@ -153,7 +153,7 @@ public class Human : Boid
             updateWeights();
             World.world.updateHumanState(getID());
         }
-        return true;
+        return;
     }
 
     public override GeneticCode getGeneticCode()

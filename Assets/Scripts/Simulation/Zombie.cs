@@ -65,7 +65,7 @@ public class Zombie : Boid
         return "Zombie";
     }
 
-    public override bool update(float deltaTime, List<Boid> neighbors, List<Boid> touching)
+    public override void update(float deltaTime, List<Boid> neighbors, List<Boid> touching)
     {
         ZombieState initialState = state;
 
@@ -87,7 +87,7 @@ public class Zombie : Boid
         if(getFuel()<0)
         {
             World.world.killZombie(getID());
-            return false;
+            return;
         } else if(getFuel()<50)
         {
             state = ZombieState.Hungry;
@@ -100,7 +100,7 @@ public class Zombie : Boid
             {
                 kills++;
                 World.world.infectHuman(neighbors[i].getID(), getID());
-                return true;
+                return;
             } else if(f=="Food")
             {
                 addFuel(-neighbors[i].getFuel());
@@ -112,12 +112,12 @@ public class Zombie : Boid
         {
             updateWeights();
         }
-        return true;
+        return;
     }
 
     public override void burnFuel(float distanceTraveled, float deltaTime)
     {
-        setFuel(getFuel() - (0.5f * distanceTraveled) + (0.5f * getDetectionRadius() * deltaTime));
+        setFuel(getFuel() - ((1.0f * distanceTraveled) + (0.25f * getDetectionRadius() * deltaTime)));
     }
 
     public override GeneticCode getGeneticCode()
