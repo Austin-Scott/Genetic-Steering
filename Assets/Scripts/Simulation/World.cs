@@ -527,6 +527,25 @@ public class World : MonoBehaviour {
             }
         }
     }
+    public Boid getClosestBoid(Vector2 point)
+    {
+        if(boids.Count==0)
+        {
+            return null;
+        }
+        float distance = Vector2.Distance(point, boids[0].getPosition());
+        Boid boid = boids[0];
+        for(int i=1; i<boids.Count;i++)
+        {
+            float d = Vector2.Distance(point, boids[i].getPosition());
+            if(d<distance)
+            {
+                boid = boids[i];
+                distance = d;
+            }
+        }
+        return boid;
+    }
     public int getHumanVictories()
     {
         return humanVictories;

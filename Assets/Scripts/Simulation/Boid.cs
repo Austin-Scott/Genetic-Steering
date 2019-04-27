@@ -139,6 +139,8 @@ public abstract class Boid {
     public abstract string getFaction();
     public abstract float getScore(float simulationTime);
 
+    public abstract string getState();
+
     public abstract GeneticCode getGeneticCode();
 
     public virtual void burnFuel(float distanceTraveled, float deltaTime)

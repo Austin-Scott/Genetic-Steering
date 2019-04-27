@@ -165,4 +165,9 @@ public class Human : Boid
     {
         return 2 * (simulationTime + (2 * secondsAlive)) + getFuel();
     }
+
+    public override string getState()
+    {
+        return state.ToString();
+    }
 }

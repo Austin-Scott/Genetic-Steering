@@ -17,5 +17,6 @@ public class CameraController : MonoBehaviour {
     public void OnPostRender()
     {
         World.world.drawDebugLines();
+        PeekWindowController.drawSelected();
     }
 }

@@ -33,4 +33,9 @@ public class Food : Boid
     {
         return 0;
     }
+
+    public override string getState()
+    {
+        return "Existing";
+    }
 }

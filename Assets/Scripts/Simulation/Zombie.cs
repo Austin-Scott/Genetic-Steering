@@ -129,4 +129,9 @@ public class Zombie : Boid
     {
         return (10*kills)+getFuel();
     }
+
+    public override string getState()
+    {
+        return state.ToString();
+    }
 }
