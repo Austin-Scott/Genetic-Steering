@@ -57,7 +57,7 @@ public class World : MonoBehaviour {
     private float generationTime = 0;
     private int generationNum = 0;
 
-    private int radiusVertexCount = 10;
+    private int radiusVertexCount = 20;
 
     private int humansAlive;
     private int zombiesAlive;
@@ -68,7 +68,12 @@ public class World : MonoBehaviour {
 
     private bool roundIsOver = false;
 
+    private Material material = null;
+
     private bool showDetectionRadii=true;
+    private bool showForces = true;
+
+    private Camera main;
 
     private List<GenePool> deadHumans;
     private List<GenePool> deadZombies;
@@ -109,6 +114,10 @@ public class World : MonoBehaviour {
     public void setShowDetectionRadii(UnityEngine.UI.Toggle value)
     {
         showDetectionRadii = value.isOn;
+    }
+    public void setShowForces(UnityEngine.UI.Toggle value)
+    {
+        showForces = value.isOn;
     }
     public List<Boid> getBoidsInCircle(Vector2 center, float radius)
     {
@@ -304,27 +313,15 @@ public class World : MonoBehaviour {
     }
     private void addBoid(Boid toAdd)
     {
-        bool addLR = false;
         if(toAdd.getFaction()=="Child" || toAdd.getFaction() == "Male" || toAdd.getFaction() == "Female" || toAdd.getFaction() == "PregnantFemale")
         {
             toAdd.setObj(Instantiate(HumanPrefab, toAdd.getPosition(), Quaternion.identity));
-            addLR = true;
         } else if(toAdd.getFaction()=="Zombie")
         {
             toAdd.setObj(Instantiate(ZombiePrefab, toAdd.getPosition(), Quaternion.identity));
-            addLR = true;
         } else
         {
             toAdd.setObj(Instantiate(FoodPrefab, toAdd.getPosition(), Quaternion.identity));
-        }
-
-        if (addLR)
-        {
-            LineRenderer lr = toAdd.getObj().AddComponent<LineRenderer>();
-            lr.material = new Material(Shader.Find("Particles/Additive"));
-            lr.startWidth = 0.1f;
-            lr.endWidth = 0.1f;
-            lr.positionCount = radiusVertexCount;
         }
 
         boids.Add(toAdd);
@@ -344,29 +341,69 @@ public class World : MonoBehaviour {
     private void drawDetectionRadius(Boid boid)
     {
         Vector2 pos = boid.getPosition();
-        LineRenderer lr = boid.getObj().GetComponent<LineRenderer>();
-        if(lr==null)
-        {
-            return;
-        }
         if(!showDetectionRadii)
         {
-            lr.enabled = false;
             return;
         }
-        lr.enabled = true;
+
+        GL.PushMatrix();
+        material.SetPass(0);
+        GL.LoadOrtho();
+
         float theta = 0f;
         float radius = boid.getDetectionRadius();
         float thetaStep = (2f * Mathf.PI) / (radiusVertexCount-1);
+
+        GL.Begin(GL.LINE_STRIP);
+        GL.Color(Color.white);
         for(int i=0;i<radiusVertexCount;i++)
         {
             float x = radius * Mathf.Cos(theta);
             float y = radius * Mathf.Sin(theta);
             x += pos.x;
             y += pos.y;
-            lr.SetPosition(i, new Vector3(x, y));
+            Vector3 screenPoint = main.WorldToScreenPoint(new Vector3(x, y));
+            screenPoint.x /= Screen.width;
+            screenPoint.y /= Screen.height;
+            screenPoint.z = 0;
+            GL.Vertex(screenPoint);
             theta += thetaStep;
         }
+        GL.End();
+        GL.PopMatrix();
+    }
+    private void drawForces(Boid boid)
+    {
+        List<Vector2> forces = boid.getForces();
+        Vector2 pos = boid.getPosition();
+
+        GL.PushMatrix();
+        material.SetPass(0);
+        GL.LoadOrtho();
+
+        GL.Begin(GL.LINES);
+        GL.Color(Color.red);
+        for (int i = 0; i < forces.Count; i++)
+        {
+            Vector3 screenPoint = main.WorldToScreenPoint(pos);
+            screenPoint.x /= Screen.width;
+            screenPoint.y /= Screen.height;
+            screenPoint.z = 0;
+            GL.Vertex(screenPoint);
+
+            float x = forces[i].x;
+            float y = forces[i].y;
+            x += pos.x;
+            y += pos.y;
+
+            screenPoint = main.WorldToScreenPoint(new Vector3(x, y));
+            screenPoint.x /= Screen.width;
+            screenPoint.y /= Screen.height;
+            screenPoint.z = 0;
+            GL.Vertex(screenPoint);
+        }
+        GL.End();
+        GL.PopMatrix();
     }
     private Boid getBoid(uint ID)
     {
@@ -397,7 +434,8 @@ public class World : MonoBehaviour {
     public void Start()
     {
         world = this;
-        Camera main = Camera.main;
+        main = Camera.main;
+        material = new Material(Shader.Find("Particles/Additive"));
         main.orthographicSize = getUpperBounds();
 
         for(int i=0;i<startingZombies;i++)
@@ -454,8 +492,6 @@ public class World : MonoBehaviour {
             Vector2 pos = boids[i].getPosition();
             pos = constrainPosition(pos);
             boids[i].setPosition(pos);
-
-            drawDetectionRadius(boids[i]);
         }
 
         createAndRemoveBoids();
@@ -472,6 +508,23 @@ public class World : MonoBehaviour {
         if(!roundIsOver && (humansAlive==0 || zombiesAlive==0))
         {
             endGeneration();
+        }
+    }
+    public void drawDebugLines()
+    {
+        if(showDetectionRadii || showForces)
+        {
+            for (int i = 0; i < boids.Count; i++)
+            {
+                if(showDetectionRadii)
+                {
+                    drawDetectionRadius(boids[i]);
+                }
+                if(showForces)
+                {
+                    drawForces(boids[i]);
+                }
+            }
         }
     }
     public int getHumanVictories()

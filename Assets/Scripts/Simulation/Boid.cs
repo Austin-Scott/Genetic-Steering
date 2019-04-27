@@ -73,6 +73,7 @@ public abstract class Boid {
     public Boid()
     {
         id = getNewID();
+        forces = new List<Vector2>();
         weights = new List<SteeringWeight>();
         behaviours = new List<SteeringBehaviour>();
     }
@@ -146,12 +147,22 @@ public abstract class Boid {
         //fuel -= 1f * deltaTime;
     }
 
+    private List<Vector2> forces;
+    public List<Vector2> getForces()
+    {
+        return forces;
+    }
+
     public void move(float deltaTime, List<Boid> neighbors)
     {
         netForces.Set(0, 0);
+        forces.Clear();
+
         for(int i=0;i<behaviours.Count;i++)
         {
-            netForces += behaviours[i].generateForce(this, neighbors) * getBehaviourWeight(behaviours[i].getName());
+            Vector2 force = behaviours[i].generateForce(this, neighbors) * getBehaviourWeight(behaviours[i].getName());
+            netForces += force;
+            forces.Add(force);
         }
         if(netForces.magnitude > maxForce)
         {
@@ -167,11 +178,6 @@ public abstract class Boid {
         }
         Vector2 oldPosition = new Vector2(position.x, position.y);
         position += velocity * deltaTime;
-
-        if(obj==null)
-        {
-            Debug.Log("ID: " + getID() + ". Faction: " + getFaction());
-        }
 
         obj.transform.SetPositionAndRotation(position, Quaternion.identity);
 
